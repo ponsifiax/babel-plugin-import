@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, existsSync } from 'path';
 import { addSideEffect, addDefault, addNamed } from '@babel/helper-module-imports';
 
 function camel2Dash(_str) {
@@ -25,9 +25,11 @@ export default class Plugin {
     fileName,
     customName,
     transformToDefaultImport,
+    override,
     types,
     index = 0
   ) {
+    this.override = typeof override === 'undefined' ? false : override;
     this.libraryName = libraryName;
     this.libraryDirectory = typeof libraryDirectory === 'undefined'
       ? 'lib'
@@ -71,9 +73,16 @@ export default class Plugin {
       const path = winPath(
         this.customName ? this.customName(transformedMethodName) : join(this.libraryName, libraryDirectory, transformedMethodName, this.fileName) // eslint-disable-line
       );
+      let jsPath = path;
+      
+      if(!!this.override && this.override.hasOwnProperty(transformedMethodName) && !file.opts.filename.endsWith(this.override[transformedMethodName]+'.ts') && !file.opts.filename.endsWith(this.override[transformedMethodName]+'.tsx') && !file.opts.filename.endsWith(this.override[transformedMethodName]+'.js') && !file.opts.filename.endsWith(this.override[transformedMethodName]+'.tsx')) {
+        jsPath = winPath(this.override[transformedMethodName]);
+      }
+      //const jsPath = (!!this.overrideFolder && !file.opts.filename.match(this.overrideFolder)) ? winPath(join(!!this.overrideImportRoot ? this.overrideImportRoot : this.overrideFolder, transformedMethodName, this.fileName)) : path;
+
       pluginState.selectedMethods[methodName] = this.transformToDefaultImport  // eslint-disable-line
-        ? addDefault(file.path, path, { nameHint: methodName })
-        : addNamed(file.path, methodName, path);
+        ? addDefault(file.path, jsPath, { nameHint: methodName })
+        : addNamed(file.path, methodName, jsPath);
       if (style === true) {
         addSideEffect(file.path, `${path}/style`);
       } else if (style === 'css') {

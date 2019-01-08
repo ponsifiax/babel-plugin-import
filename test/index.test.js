@@ -82,6 +82,15 @@ describe('index', () => {
             },
           },
         ];
+      } else if(caseName === 'override') {
+        pluginWithOpts = [
+          plugin, { 
+            libraryName: 'antd', 
+            override: {
+              'select': 'override/select'
+            }
+          }
+        ];
       } else {
         pluginWithOpts = [
           plugin, { libraryName: 'antd' }
